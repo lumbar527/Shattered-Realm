@@ -16,14 +16,32 @@ function originate(x, y, z, ox, oy, oz) -- center around point o-
 end
 
 function rotate(x, y, z, rx, ry, rz) -- rotate around origin
-    x = x * math.cos(rz) - y * math.sin(rz)
-    y = x * math.sin(rz) + y * math.cos(rz)
+    -- x = (x * math.cos(rz) - y * math.sin(rz))
+    -- y = (x * math.sin(rz) + y * math.cos(rz))
 
-    x = x * math.cos(ry) - z * math.sin(ry)
-    z = x * math.sin(ry) + z * math.cos(ry)
+    -- x = (x * math.cos(ry) - z * math.sin(ry))
+    -- z = (x * math.sin(ry) + z * math.cos(ry))
 
-    y = z * math.sin(rx) + y * math.cos(rx)
-    z = y * math.sin(rx) + z * math.cos(rx)
+    -- y = (z * math.sin(rx) + y * math.cos(rx))
+    -- z = (y * math.sin(rx) + z * math.cos(rx))
+
+    local distance=math.sqrt(x^2+y^2)
+    local current_angle=math.atan2(y, x)
+    local new_angle=current_angle+rz
+    x=math.cos(new_angle)*distance
+    y=math.sin(new_angle)*distance
+
+    local distance=math.sqrt(x^2+z^2)
+    local current_angle=math.atan2(z,x)
+    local new_angle=current_angle+ry
+    x=math.cos(new_angle)*distance
+    z=math.sin(new_angle)*distance
+
+    local distance=math.sqrt(y^2+z^2)
+    local current_angle=math.atan2(z,y)
+    local new_angle=current_angle+rx
+    y=math.cos(new_angle)*distance
+    z=math.sin(new_angle)*distance
 
     return x, y, z
 end
@@ -43,12 +61,12 @@ function get_point(x, y, z, from_player) -- z is distance in this engine, sadly
     if from_player then
         x, y, z = center_to_player(x, y, z)
     end
-    x_prime, y_prime = x/z * SCALE, y/z * SCALE -- Apply formula
+    local x_prime, y_prime = x/z * SCALE, y/z * SCALE -- Apply formula
     x_prime = x_prime + WIDTH / 2
     y_prime = - y_prime + HEIGHT / 2 -- Fit to screen
     if z <= 0 then
-        x_prime = simple(x/z) * WIDTH / 2
-        y_prime = simple(y/z) * HEIGHT / 2
+        x_prime = simple(x) * WIDTH / 2 + WIDTH / 2
+        y_prime = - simple(y) * HEIGHT / 2 + HEIGHT / 2
     end
     return x_prime, y_prime
 end
@@ -86,6 +104,8 @@ function render_rectangle(x, y, z, width, height, depth, from_player) -- Scale v
     love.graphics.line(fx, fy, bx, by)
     love.graphics.line(cx, cy, gx, gy)
     love.graphics.line(hx, hy, dx, dy)
+
+    -- love.graphics.print("x: "..(cx - WIDTH / 2).." y: "..(-cy + HEIGHT / 2))
 end
 
 -- BEGIN
@@ -95,8 +115,40 @@ _init()
 function love.draw()
     love.graphics.setColor(1,1,1)
     love.graphics.rectangle("fill",0,0, WIDTH, HEIGHT)
-    render_rectangle(5, 5, z_dist, 2, -2, 2, true)
+    render_rectangle(5, 5, 5, 2, 2, 2, true)
+    render_rectangle(0, 0, 10, 10, 10, 10, true)
+    render_rectangle(-1, 3, -5, 1, 1, 1, true)
     -- z_dist = z_dist + 1/10
-    player.ry = player.ry - 1/100
+    -- player.ry = player.ry - 1/100
     -- if player.rx > math.pi * 2 then player.rx = player.rx - math.pi * 2 end
+
+    -- Player Movement
+    if love.keyboard.isDown("w") then
+        player.x = player.x + math.sin(player.ry)
+        player.z = player.z + math.cos(player.ry)
+    end
+    if love.keyboard.isDown("s") then
+        player.x = player.x - math.sin(player.ry)
+        player.z = player.z - math.cos(player.ry)
+    end
+    if love.keyboard.isDown("a") then
+        player.x = player.x + math.sin(player.ry - math.pi/2)
+        player.z = player.z + math.cos(player.ry - math.pi/2)
+    end
+    if love.keyboard.isDown("d") then
+        player.x = player.x - math.sin(player.ry - math.pi/2)
+        player.z = player.z - math.cos(player.ry - math.pi/2)
+    end
+    if love.keyboard.isDown("left") then
+        player.ry = player.ry - 1/100
+    end
+    if love.keyboard.isDown("right") then
+        player.ry = player.ry + 1/100
+    end
+    if love.keyboard.isDown("up") then
+        player.rx = player.rx - 1/100
+    end
+    if love.keyboard.isDown("down") then
+        player.rx = player.rx + 1/100
+    end
 end
