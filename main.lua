@@ -71,6 +71,10 @@ function get_point(x, y, z, from_player) -- z is distance in this engine, sadly
     return x_prime, y_prime
 end
 
+function collide_rect(px, py, pz, x, y, z, width, height, depth)
+    return (px > x - width / 2 and px < x + width / 2) and (py > y - height / 2 and py < y + height / 2) and (pz > z - depth / 2 and pz < z + depth / 2)
+end
+
 function simple(n) -- Returns -1, 0, or 1
     if n > 0 then return 1 elseif n < 0 then return -1 else return 0 end
 end
@@ -108,6 +112,20 @@ function render_rectangle(x, y, z, width, height, depth, from_player) -- Scale v
     -- love.graphics.print("x: "..(cx - WIDTH / 2).." y: "..(-cy + HEIGHT / 2))
 end
 
+function move_with_collisions(mx, my, mz)
+    if collide_rect(player.x + mx, player.y + my, player.z + mz, 0, 0, 10, 10, 10, 10) then
+        if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
+            -- if not collide_rect(player.x - mx * 2, player.y - my * 2, player.z - my * 2, 0, 0, 10, 10, 10, 10) then
+            --     return player.x - mx * 2, player.y - my * 2, player.z - mz * 2
+            -- end
+            love.graphics.print("Help I'm stuck!"..player.x.." "..player.z.." "..mx.." "..mz)
+        end
+        return player.x, player.y, player.z
+    else
+        return player.x + mx, player.y + my, player.z + mz
+    end
+end
+
 -- BEGIN
 
 _init()
@@ -117,38 +135,43 @@ function love.draw()
     love.graphics.rectangle("fill",0,0, WIDTH, HEIGHT)
     render_rectangle(5, 5, 5, 2, 2, 2, true)
     render_rectangle(0, 0, 10, 10, 10, 10, true)
-    render_rectangle(-1, 3, -5, 1, 1, 1, true)
+    -- render_rectangle(-1, 3, -5, 1, 1, 1, true)
     -- z_dist = z_dist + 1/10
     -- player.ry = player.ry - 1/100
     -- if player.rx > math.pi * 2 then player.rx = player.rx - math.pi * 2 end
 
     -- Player Movement
     if love.keyboard.isDown("w") then
-        player.x = player.x + math.sin(player.ry)
-        player.z = player.z + math.cos(player.ry)
+        player.x, player.y, player.z = move_with_collisions(math.sin(player.ry), 0, math.cos(player.ry))
     end
     if love.keyboard.isDown("s") then
-        player.x = player.x - math.sin(player.ry)
-        player.z = player.z - math.cos(player.ry)
+        player.x, player.y, player.z = move_with_collisions(-math.sin(player.ry), 0, -math.cos(player.ry))
     end
     if love.keyboard.isDown("a") then
-        player.x = player.x + math.sin(player.ry - math.pi/2)
-        player.z = player.z + math.cos(player.ry - math.pi/2)
+        player.x, player.y, player.z = move_with_collisions(math.sin(player.ry - math.pi/2), 0, math.cos(player.ry - math.pi/2))
     end
     if love.keyboard.isDown("d") then
-        player.x = player.x - math.sin(player.ry - math.pi/2)
-        player.z = player.z - math.cos(player.ry - math.pi/2)
+        player.x, player.y, player.z = move_with_collisions(-math.sin(player.ry - math.pi/2), 0, -math.cos(player.ry - math.pi/2))
+    end
+    if love.keyboard.isDown("space") then
+        player.y = player.y + 1/5
+    end
+    if love.keyboard.isDown("lshift") then
+        player.y = player.y - 1/5
     end
     if love.keyboard.isDown("left") then
-        player.ry = player.ry - 1/100
+        player.ry = player.ry - 1/50
     end
     if love.keyboard.isDown("right") then
-        player.ry = player.ry + 1/100
+        player.ry = player.ry + 1/50
     end
     if love.keyboard.isDown("up") then
-        player.rx = player.rx - 1/100
+        player.rx = player.rx - 1/50
     end
     if love.keyboard.isDown("down") then
-        player.rx = player.rx + 1/100
+        player.rx = player.rx + 1/50
     end
+    -- if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
+    --     love.graphics.print("Collision!")
+    -- end
 end
