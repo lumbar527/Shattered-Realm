@@ -4,8 +4,12 @@ function _init()
     -- System Variables
     WIDTH, HEIGHT = love.window.getMode()
     SCALE = 200
+
     z_dist = 15
-    player = {x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0}
+    player = {x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = true}
+    deltaTime = 0
+
+    blocks = {{0, -2, 0, 100, 2, 100}, {0, 0, 10, 10, 10, 10}, {0, 0, 20, 8, 8, 12}, {10, 0, 13, 9, 4, 10}}
 end
 
 -- FUNCTIONS
@@ -113,32 +117,37 @@ function render_rectangle(x, y, z, width, height, depth, from_player) -- Scale v
 end
 
 function move_with_collisions(mx, my, mz)
-    if collide_rect(player.x + mx, player.y + my, player.z + mz, 0, 0, 10, 10, 10, 10) then
-        if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
-            -- if not collide_rect(player.x - mx * 2, player.y - my * 2, player.z - my * 2, 0, 0, 10, 10, 10, 10) then
-            --     return player.x - mx * 2, player.y - my * 2, player.z - mz * 2
-            -- end
-            love.graphics.print("Help I'm stuck!"..player.x.." "..player.z.." "..mx.." "..mz)
+    for i = 1, #blocks do
+        if collide_rect(player.x + mx, player.y + my, player.z + mz, blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6]) then
+            if collide_rect(player.x, player.y, player.z, blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6]) then
+                -- if not collide_rect(player.x - mx * 2, player.y - my * 2, player.z - my * 2, 0, 0, 10, 10, 10, 10) then
+                --     return player.x - mx * 2, player.y - my * 2, player.z - mz * 2
+                -- end
+                love.graphics.print("Help I'm stuck!"..player.x.." "..player.z.." "..mx.." "..mz)
+            end
+            return player.x, player.y, player.z
         end
-        return player.x, player.y, player.z
-    else
-        return player.x + mx, player.y + my, player.z + mz
     end
+    return player.x + mx, player.y + my, player.z + mz
 end
 
 -- BEGIN
 
 _init()
 
+function love.update(dt)
+    deltaTime = dt
+end
+
 function love.draw()
     love.graphics.setColor(1,1,1)
     love.graphics.rectangle("fill",0,0, WIDTH, HEIGHT)
-    render_rectangle(5, 5, 5, 2, 2, 2, true)
-    render_rectangle(0, 0, 10, 10, 10, 10, true)
-    -- render_rectangle(-1, 3, -5, 1, 1, 1, true)
-    -- z_dist = z_dist + 1/10
-    -- player.ry = player.ry - 1/100
-    -- if player.rx > math.pi * 2 then player.rx = player.rx - math.pi * 2 end
+
+    for i = 1, #blocks do
+        render_rectangle(blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6], true)
+    end
+    -- render_rectangle(5, 5, 5, 2, 2, 2, true)
+    -- render_rectangle(0, 0, 10, 10, 10, 10, true)
 
     -- Player Movement
     if love.keyboard.isDown("w") then
@@ -154,22 +163,33 @@ function love.draw()
         player.x, player.y, player.z = move_with_collisions(-math.sin(player.ry - math.pi/2), 0, -math.cos(player.ry - math.pi/2))
     end
     if love.keyboard.isDown("space") then
-        player.y = player.y + 1/5
+        if player.jump <= 0 and player.grounded then
+            player.jump = .3
+            player.grounded = false
+        end
     end
     if love.keyboard.isDown("lshift") then
-        player.y = player.y - 1/5
+        player.y = player.y - deltaTime*10
     end
     if love.keyboard.isDown("left") then
-        player.ry = player.ry - 1/50
+        player.ry = player.ry - deltaTime
     end
     if love.keyboard.isDown("right") then
-        player.ry = player.ry + 1/50
+        player.ry = player.ry + deltaTime
     end
     if love.keyboard.isDown("up") then
-        player.rx = player.rx - 1/50
+        player.rx = player.rx + deltaTime
     end
     if love.keyboard.isDown("down") then
-        player.rx = player.rx + 1/50
+        player.rx = player.rx - deltaTime
+    end
+    if player.jump > 0 then
+        player.x, player.y, player.z = move_with_collisions(0, deltaTime * 50, 0)
+        player.jump = player.jump - deltaTime
+    else
+        local oldy = player.y
+        player.x, player.y, player.z = move_with_collisions(0, - deltaTime * 50, 0)
+        player.grounded = oldy == player.y
     end
     -- if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
     --     love.graphics.print("Collision!")
