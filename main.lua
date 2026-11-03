@@ -9,7 +9,7 @@ function _init()
     player = {x = 0, y = 1, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = true}
     deltaTime = 0
 
-    blocks = {{0, -2, 0, 100, 2, 100}, {0, 0, 10, 10, 10, 10}, {0, 0, 20, 8, 8, 12}, {10, 0, 13, 9, 4, 10}}
+    blocks = {{0, -2, 0, 100, 2, 100}, {0, 0, 10, 10, 10, 10}, {0, 0, 20, 8, 8, 12}, {10, 0, 13, 9, 4, 10}, {0, 10, 30, 8, 4, 12}}
 end
 
 -- FUNCTIONS
@@ -97,7 +97,10 @@ function render_rectangle(x, y, z, width, height, depth, from_player) -- Scale v
     hx, hy = get_point(x - width / 2, y + height / 2, z + depth / 2, from_player)
 
     -- Render points to test:
-    love.graphics.setColor(0,0,0)
+    love.graphics.setColor(width%1.2,height%1.2,depth%1.2,1)
+    if depth > 99 then
+        love.graphics.setColor(1,1,1,0)
+    end
     love.graphics.points(ax, ay, bx, by, cx, cy, dx, dy, ex, ey, fx, fy, gx, gy, hx, hy)
     love.graphics.line(ax, ay, bx, by)
     love.graphics.line(cx, cy, bx, by)
@@ -113,6 +116,14 @@ function render_rectangle(x, y, z, width, height, depth, from_player) -- Scale v
     love.graphics.line(fx, fy, bx, by)
     love.graphics.line(cx, cy, gx, gy)
     love.graphics.line(hx, hy, dx, dy)
+
+    -- Group by faces:
+    love.graphics.polygon("fill", ax, ay, bx, by, cx, cy, dx, dy)
+    love.graphics.polygon("fill", ex, ey, fx, fy, gx, gy, hx, hy)
+    love.graphics.polygon("fill", ax, ay, ex, ey, fx, fy, bx, by)
+    love.graphics.polygon("fill", bx, by, fx, fy, gx, gy, cx, cy)
+    love.graphics.polygon("fill", cx, cy, gx, gy, hx, hy, dx, dy)
+    love.graphics.polygon("fill", dx, dy, hx, hy, ex, ey, ax, ay)
 
     -- love.graphics.print("x: "..(cx - WIDTH / 2).." y: "..(-cy + HEIGHT / 2))
 end
@@ -132,6 +143,18 @@ function move_with_collisions(mx, my, mz)
     return player.x + mx, player.y + my, player.z + mz
 end
 
+function distance(block)
+    return math.sqrt(
+        (block[1] - player.x + block[4] / 2)^2 +
+        (block[2] - player.y + block[5] / 2)^2 +
+        (block[3] - player.z + block[6] / 2)^2
+    )
+end
+
+function blocks_closer(a, b)
+    return distance(a) > distance(b)
+end
+
 -- BEGIN
 
 _init()
@@ -144,6 +167,7 @@ function love.draw()
     love.graphics.setColor(1,1,1)
     love.graphics.rectangle("fill",0,0, WIDTH, HEIGHT)
 
+    table.sort(blocks, blocks_closer)
     for i = 1, #blocks do
         render_rectangle(blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6], true)
     end
