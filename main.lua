@@ -6,7 +6,7 @@ function _init()
     SCALE = 200
 
     z_dist = 15
-    player = {x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = true}
+    player = {x = 0, y = 1, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = true}
     deltaTime = 0
 
     blocks = {{0, -2, 0, 100, 2, 100}, {0, 0, 10, 10, 10, 10}, {0, 0, 20, 8, 8, 12}, {10, 0, 13, 9, 4, 10}}
@@ -57,7 +57,7 @@ function rotate_around_point(x, y, z, ox, oy, oz, rx, ry, rz)
 end
 
 function center_to_player(x, y, z)
-    x, y, z = originate(x, y, z, player.x, player.y, player.z)
+    x, y, z = originate(x, y, z, player.x, player.y + 5, player.z) -- Originate to player *head*
     return rotate(x, y, z, player.rx, player.ry, player.rz)
 end
 
@@ -69,8 +69,9 @@ function get_point(x, y, z, from_player) -- z is distance in this engine, sadly
     x_prime = x_prime + WIDTH / 2
     y_prime = - y_prime + HEIGHT / 2 -- Fit to screen
     if z <= 0 then
-        x_prime = simple(x) * WIDTH / 2 + WIDTH / 2
-        y_prime = - simple(y) * HEIGHT / 2 + HEIGHT / 2
+        x_prime, y_prime = x*100 * SCALE, y*100 * SCALE -- Pretend it's just right on the edge.
+        x_prime = x_prime + WIDTH / 2
+        y_prime = - y_prime + HEIGHT / 2 -- Fit to screen
     end
     return x_prime, y_prime
 end
