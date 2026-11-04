@@ -6,10 +6,11 @@ function _init()
     SCALE = 200
 
     z_dist = 15
-    player = {x = 0, y = 1, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = true}
+    player = {x = 0, y = 10, z = 0, rx = 0, ry = 0, rz = 0, jump = 0, grounded = 1, mode = 1}
     deltaTime = 0
+    last_mode = 1
 
-    blocks = {{0, -2, 0, 100, 2, 100}, {0, 0, 10, 10, 10, 10}, {0, 0, 20, 8, 8, 12}, {10, 0, 13, 9, 4, 10}, {0, 10, 30, 8, 4, 12}}
+    blocks = {{0, -5, 0, 100, 10, 100, 0}, {0, 0, 10, 10, 10, 10, -1}, {0, 0, 20, 8, 8, 12, 1}, {10, 0, 13, 9, 4, 10, -1}, {0, 10, 30, 8, 4, 12, 1}}
 end
 
 -- FUNCTIONS
@@ -130,6 +131,15 @@ end
 
 function move_with_collisions(mx, my, mz)
     for i = 1, #blocks do
+        if player.mode == 0 then
+            if blocks[i][7] ~= last_mode and blocks[i][7] ~= 0 then
+                goto skip
+            end
+        else
+            if blocks[i][7] ~= player.mode and blocks[i][7] ~= 0 then
+                goto skip
+            end
+        end
         if collide_rect(player.x + mx, player.y + my, player.z + mz, blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6]) then
             if collide_rect(player.x, player.y, player.z, blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6]) then
                 -- if not collide_rect(player.x - mx * 2, player.y - my * 2, player.z - my * 2, 0, 0, 10, 10, 10, 10) then
@@ -139,6 +149,7 @@ function move_with_collisions(mx, my, mz)
             end
             return player.x, player.y, player.z
         end
+        ::skip::
     end
     return player.x + mx, player.y + my, player.z + mz
 end
@@ -155,6 +166,17 @@ function blocks_closer(a, b)
     return distance(a) > distance(b)
 end
 
+-- Special Key Functions
+function love.keypressed(key, scancode, isrepeat)
+   if key == "escape" then
+      love.event.quit()
+   end
+   if key == "rshift" then
+      player.mode = - player.mode
+      last_mode = player.mode
+   end
+end
+
 -- BEGIN
 
 _init()
@@ -169,7 +191,9 @@ function love.draw()
 
     table.sort(blocks, blocks_closer)
     for i = 1, #blocks do
-        render_rectangle(blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6], true)
+        if blocks[i][7] == player.mode or player.mode == 0 then
+            render_rectangle(blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6], true)
+        end
     end
     -- render_rectangle(5, 5, 5, 2, 2, 2, true)
     -- render_rectangle(0, 0, 10, 10, 10, 10, true)
@@ -188,13 +212,19 @@ function love.draw()
         player.x, player.y, player.z = move_with_collisions(-math.sin(player.ry - math.pi/2), 0, -math.cos(player.ry - math.pi/2))
     end
     if love.keyboard.isDown("space") then
-        if player.jump <= 0 and player.grounded then
-            player.jump = .3
-            player.grounded = false
+        if player.jump <= 0 and player.grounded > 0 then
+            player.jump = .5
+            player.grounded = 0
         end
     end
+    local last_ground_state = player.grounded > 0.3
     if love.keyboard.isDown("lshift") then
-        player.y = player.y - deltaTime*10
+        if player.mode ~= 0 then
+            last_mode = player.mode
+        end
+        player.mode = 0
+    else
+        player.mode = last_mode
     end
     if love.keyboard.isDown("left") then
         player.ry = player.ry - deltaTime
@@ -214,9 +244,12 @@ function love.draw()
     else
         local oldy = player.y
         player.x, player.y, player.z = move_with_collisions(0, - deltaTime * 50, 0)
-        player.grounded = oldy == player.y
+        local is_grounded = oldy == player.y
+        if is_grounded then player.grounded = 1 elseif last_ground_state then player.grounded = 0.3 end
     end
+    player.grounded = player.grounded - deltaTime
     -- if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
     --     love.graphics.print("Collision!")
     -- end
+    love.graphics.print(player.grounded)
 end
