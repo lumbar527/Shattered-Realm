@@ -1,3 +1,5 @@
+require("ui")
+
 -- SETUP
 
 function _init()
@@ -11,6 +13,10 @@ function _init()
     last_mode = 1
 
     blocks = {{0, -5, 0, 100, 10, 100, 0}, {0, 0, 10, 10, 10, 10, -1}, {0, 0, 20, 8, 8, 12, 1}, {10, 0, 13, 9, 4, 10, -1}, {0, 10, 30, 8, 4, 12, 1}}
+
+    -- for gui variables
+    value = "0"
+    s1 = false
 end
 
 -- FUNCTIONS
@@ -179,6 +185,7 @@ end
 
 -- BEGIN
 
+fired = 0 -- Calling _init() with a button causes and issue with `fired`.
 _init()
 
 function love.update(dt)
@@ -186,6 +193,8 @@ function love.update(dt)
 end
 
 function love.draw()
+    fired = fired - deltaTime
+
     love.graphics.setColor(1,1,1)
     love.graphics.rectangle("fill",0,0, WIDTH, HEIGHT)
 
@@ -195,6 +204,10 @@ function love.draw()
             render_rectangle(blocks[i][1], blocks[i][2], blocks[i][3], blocks[i][4], blocks[i][5], blocks[i][6], true)
         end
     end
+
+    button(10, 10, "Restart", _init)
+    value, s1 = input(10, 40, "x: ", value, s1)
+    text_box(10, 70, "You said x = "..value..". Why?")
     -- render_rectangle(5, 5, 5, 2, 2, 2, true)
     -- render_rectangle(0, 0, 10, 10, 10, 10, true)
 
@@ -251,5 +264,5 @@ function love.draw()
     -- if collide_rect(player.x, player.y, player.z, 0, 0, 10, 10, 10, 10) then
     --     love.graphics.print("Collision!")
     -- end
-    love.graphics.print(player.grounded)
+    -- love.graphics.print(player.grounded)
 end
